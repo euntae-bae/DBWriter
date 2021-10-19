@@ -1,0 +1,5 @@
+dbwriter
+main
+log-stride/
+svm-stride/
+.vscode/

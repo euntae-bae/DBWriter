@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include <mongoc/mongoc.h>
 #include <bson/bson.h>
+#include "timestamp.h"
 #define BUF_SIZE 256
-
+#define USER_ID         "userId"
 /*
 collection userGaitData
   userId: String,
@@ -19,9 +19,79 @@ typedef struct UserGaitData
     char userId[BUF_SIZE];
     struct tm startTime;
     struct tm endTime;
-};
+    float gaitSpeed;
+    float strideLength;
+} UserGaitData;
 
-int main(void)
+FILE *logStartTime;
+FILE *logElapsedTime;
+FILE *logGaitSpeed;
+FILE *logStep;
+
+int openLogFiles(void) {
+    const char *LOG_START_TIME = "log-start-time.txt";
+    const char *LOG_ELAPSED_TIME = "log-elapsed-time.txt";
+    const char *LOG_GAIT_SPEED = "log-gait-speed.txt";
+    const char *LOG_STEP = "sensor-step.txt";
+
+    startTimeLog = fopen(LOG_START_TIME, "rt");
+    if (!logStartTime) {
+        return -1;
+    }
+
+    logElapsedTime = fopen(LOG_ELAPSED_TIME, "rt");
+    if (!logElapsedTime) {
+        return -1;
+    }
+
+    logGaitSpeed = fopen(LOG_GAIT_SPEED, "rt");
+    if (!logGaitSpeed) {
+        return -1;
+    }
+
+    logStep = fopen(LOG_STEP, "rt");
+    if (!logStep) {
+        return -1;
+    }
+
+    return 0;
+}
+
+void readLogFiles(UserGaitData *list) {
+    char buffer[BUF_SIZE];
+    Timestamp curTime;
+    int curElapsedTime, curStep;
+    float curGaitSpeed;
+    float curStrideLength;
+    int curIdx;
+
+    curIdx = 0;
+    while (!feof(logStartTime)) {
+        fgets(buf, BUF_SIZE, logStartTime);
+        fscanf(logElapsedTime, "delta time: %d\n", &curElapsedTime);
+        fscanf(logGaitSpeed, "%d\n", &curGaitSpeed);
+        fscanf(logStep, "%d\n", &curStep);
+
+        curTime = getTime(buf);
+        curStrideLength = (2.0f * curGaitSpeed * (float)curElapsedTime) / (float)curStep;
+
+        strcpy(list[curIdx].userId, USER_ID);
+        list[curIdx].startTime = curTime;
+        list[curIdx].gaitSpeed = curGaitSpeed;
+        list[curIdx].strideLength = curStrideLength;
+        list[curIdx].endTime = getEndTime(&curTime, curElapsedTime);
+        curIdx++;
+    }
+}
+
+void closeLogFiles(void) {
+    fclose(logStartTime);
+    fclose(logElapsedTime);
+    fclose(logGaitSpeed);
+    fclose(logStep);
+}
+
+int main(int argc, char *argv[])
 {
     const char *uri_string = "mongodb://localhost:27017";
     mongoc_uri_t *uri;
@@ -32,6 +102,24 @@ int main(void)
     bson_error_t error;
     char *str;
     bool retval;
+
+    UserGaitData userDataList[BUF_SIZE];
+
+    if (openLogFiles() == -1) {
+        fputs("E: file open error\n", stderr);
+        return -1;
+    }
+
+    readLogFiles(userDataList);
+
+    while (!feof(logStartTime)) {
+        fgets(buffer, BUF_SIZE, logStartTime);
+        printf("%s", buffer);
+        getTime(buffer);
+    }
+
+    closeLogFiles();
+    return 0;
 
     // Required to initialize libmongoc's internals
     mongoc_init();
