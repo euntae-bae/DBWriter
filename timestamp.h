@@ -158,7 +158,8 @@ Timestamp getEndTime(const Timestamp *ts, int elapsedTime) {
 // timestamp to struct tm
 // [yyyymmddhhmmss.]
 struct tm ts2tm(const Timestamp *ts) {
-    int curValue;
-    int digit;
-
+    struct tm ret;
+    ret.year = ts->year;
+    ret.mon = ts->month;
+    ret.
 }

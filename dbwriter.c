@@ -5,7 +5,7 @@
 #include <bson/bson.h>
 #include "timestamp.h"
 #define BUF_SIZE 256
-#define USER_ID         "userId"
+#define USER_ID         "userid"
 /*
 collection userGaitData
   userId: String,
