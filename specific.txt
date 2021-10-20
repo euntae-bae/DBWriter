@@ -1,0 +1,55 @@
+MongoDB shell version v4.2.10
+git version: 88276238fa97b47c0ef14362b343c5317ecbd739
+OpenSSL version: OpenSSL 1.1.1f  31 Mar 2020
+allocator: tcmalloc
+modules: none
+build environment:
+    distmod: ubuntu1804
+    distarch: x86_64
+    target_arch: x86_64
+
+
+-u hpclab -p hpc1314
+$ sudo mongod --auth
+$ mongo admin -u hpclab -p hpc1314
+
+db: gaitdb
+collection: userGaitData
+
+uri: "mongodb://hpclab:hpc1314@localhost:27017"
+"mongodb://hpclab:hpc1314@localhost:27017/?authSource=gaitdb"
+"mongodb://user:password@localhost/?authSource=mydb"
+
+
+```
+> db.createUser({ user: 'hpclab', pwd: 'hpc1314', roles: [ {role: 'dbOwner', db: 'gaitdb'}] })
+Successfully added user: {
+	"user" : "hpclab",
+	"roles" : [
+		{
+			"role" : "dbOwner",
+			"db" : "gaitdb"
+		}
+	]
+}
+> show users
+{
+	"_id" : "gaitdb.hpclab",
+	"userId" : UUID("3dc2e210-c2ac-47c8-bd19-2daeeff9c30f"),
+	"user" : "hpclab",
+	"db" : "gaitdb",
+	"roles" : [
+		{
+			"role" : "dbOwner",
+			"db" : "gaitdb"
+		}
+	],
+	"mechanisms" : [
+		"SCRAM-SHA-1",
+		"SCRAM-SHA-256"
+	]
+}
+> 
+
+
+```

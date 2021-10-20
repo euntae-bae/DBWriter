@@ -105,17 +105,23 @@ void closeLogFiles(void) {
     fclose(logStep);
 }
 
+void appendData() {
+
+}
+
+// BSON_APPEND_DATE_TIME(document, "startTime")
 int main(int argc, char *argv[])
 {
-    const char *uri_string = "mongodb://localhost:27017";
+    const char *uri_string = "mongodb://hpclab:hpc1314@localhost:27017/?authSource=gaitdb";
     mongoc_uri_t *uri;
     mongoc_client_t *client;
     mongoc_database_t *database;
     mongoc_collection_t *collection;
-    bson_t *command, reply, *insert;
     bson_error_t error;
     char *str;
     bool retval;
+
+    bson_t *document;
 
     UserGaitData userDataList[BUF_SIZE];
 
@@ -128,7 +134,7 @@ int main(int argc, char *argv[])
     retrieveUserGaitData(userDataList, listLength);
 
     closeLogFiles();
-    return 0;
+
 
     // Required to initialize libmongoc's internals
     mongoc_init();
@@ -164,32 +170,28 @@ int main(int argc, char *argv[])
     database = mongoc_client_get_database(client, "gaitdb");
     collection = mongoc_client_get_collection(client, "gaitdb", "userGaitData");
 
-    /* Do work. This example pings the database, prints the result as JSON and performs an insert */
-    command = BCON_NEW("ping", BCON_INT32(1));
+    printf("listLength: %d\n", listLength);
+    int i;
+    for (i = 0; i < listLength; i++) {
+        document = BCON_NEW(
+            "userId", BCON_UTF8(userDataList[i].userId),
+            "startTime", BCON_DATE_TIME(mktime(&userDataList[i].startTime) * 1000),
+            "endTime", BCON_DATE_TIME(mktime(&userDataList[i].endTime) * 1000),
+            "gaitSpeed", BCON_DOUBLE(userDataList[i].gaitSpeed),
+            "strideLength", BCON_DOUBLE(userDataList[i].strideLength)
+        );
+        str = bson_as_canonical_extended_json (document, NULL);
+        printf("[%03d] %s\n", i, str);
 
-    retval = mongoc_client_command_simple(client, "admin", command, NULL, &reply, &error);
+        if (!mongoc_collection_insert_one(collection, document, NULL, NULL, &error)) {
+            fprintf(stderr, "%s\n", error.message);
+            return EXIT_FAILURE;
+        }
 
-    if (!retval)
-    {
-        fprintf(stderr, "%s\n", error.message);
-        return EXIT_FAILURE;
+        bson_free(str);
+        bson_destroy(document);
     }
-
-    str = bson_as_json(&reply, NULL);
-    printf("%s\n", str);
-
-    insert = BCON_NEW("hello", BCON_UTF8("world"));
-
-    if (!mongoc_collection_insert_one(collection, insert, NULL, NULL, &error))
-    {
-        fprintf(stderr, "%s\n", error.message);
-    }
-
-    bson_destroy(insert);
-    bson_destroy(&reply);
-    bson_destroy(command);
-    bson_free(str);
-
+    
     // Release our handles and clean up libmongoc
     mongoc_collection_destroy(collection);
     mongoc_database_destroy(database);
