@@ -24,12 +24,14 @@ int getLastDay(int year, int month) {
 
 // [20210805063439.726]
 
-Timestamp getTime(const char *ts) {
+Timestamp str2ts(const char *ts) {
     Timestamp retTime;
     int offset = 1;
     int curValue = 0;
     int digit;
     int i;
+
+    memset(&retTime, 0, sizeof(retTime));
 
     // get year
     for (i = 0; i < 4; i++) {
@@ -104,6 +106,30 @@ Timestamp getTime(const char *ts) {
     return retTime;
 }
 
+struct tm ts2tm(const Timestamp *ts) {
+    struct tm retTm;
+    memset(&retTm, 0, sizeof(struct tm));
+    retTm.tm_year = ts->year - 1900;
+    retTm.tm_mon = ts->month - 1;
+    retTm.tm_mday = ts->day;
+    retTm.tm_hour = ts->hour;
+    retTm.tm_min = ts->min;
+    retTm.tm_sec = ts->second;
+    return retTm;
+}
+
+Timestamp tm2ts(const struct tm *t) {
+    Timestamp ts;
+    memset(&ts, 0, sizeof(ts));
+    ts.year = t->tm_year + 1900;
+    ts.month = t->tm_mon + 1;
+    ts.day = t->tm_mday;
+    ts.hour = t->tm_hour;
+    ts.min = t->tm_min;
+    ts.second = t->tm_sec;
+    return ts;
+}
+
 Timestamp getEndTime(const Timestamp *ts, int elapsedTime) {
     Timestamp ret;
     int carry;
@@ -127,8 +153,8 @@ Timestamp getEndTime(const Timestamp *ts, int elapsedTime) {
         carry = 0;
     
     ret.hour += carry;
-    if (ret.hour >= 60) {
-        ret.hour -= 60;
+    if (ret.hour >= 24) {
+        ret.hour -= 24;
         carry = 1;
     }
     else
@@ -155,11 +181,9 @@ Timestamp getEndTime(const Timestamp *ts, int elapsedTime) {
     return ret;
 }
 
-// timestamp to struct tm
-// [yyyymmddhhmmss.]
-struct tm ts2tm(const Timestamp *ts) {
-    struct tm ret;
-    ret.year = ts->year;
-    ret.mon = ts->month;
-    ret.
+void displayTm(const struct tm *time) {
+    // 1900 based year
+    // 0 based month
+    printf("%04d/%02d/%02d %02d:%02d:%02d", time->tm_year + 1900, time->tm_mon + 1, time->tm_mday, 
+    time->tm_hour, time->tm_min, time->tm_sec);
 }

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <time.h>
 #include "timestamp.h"
 #define LOG_START_TIME      "log-start-time.txt"
 #define LOG_ELAPSED_TIME    "log-elapsed-time.txt"
@@ -12,18 +13,29 @@ int main(void) {
     int curStep, curElapsedTime;
     int i;
 
-    printf("%d\n", getLastDay(2020, 2));
-    printf("%d\n", getLastDay(1980, 2));
-    printf("%d\n", getLastDay(1979, 3));
-    printf("%d\n", getLastDay(2021, 5));
-    printf("%d\n", getLastDay(2021, 8));
-    printf("%d\n", getLastDay(1970, 11));
-    printf("%d\n", getLastDay(2021, 2));
+    time_t rawtime;
+    struct tm *curTime;
+    time(&rawtime);
+    curTime = localtime(&rawtime);
+    displayTm(curTime);
+
+    Timestamp ts1 = str2ts("[20210805063439.726]");
+    Timestamp ts2 = getEndTime(&ts1, 36);
+    struct tm tm1 = ts2tm(&ts1);
+    struct tm tm2 = ts2tm(&ts2);
+    displayTm(&tm1);
+    displayTm(&tm2);
+
+    Timestamp ts3 = str2ts("[20191231235926.591]");
+    Timestamp ts4 = getEndTime(&ts3, 51);
+    struct tm tm3 = ts2tm(&ts3);
+    struct tm tm4 = ts2tm(&ts4);
+    displayTm(&tm3);
+    displayTm(&tm4);
+
     return 0;
 
-    //printf("%d\n", getYearFromTimestamp("[20210805063439.726]"));
-    //getTime("[20210805063439.726]");
-
+/*
     if (!logStartTime) {
         fputs("E: can't open file", stderr);
         return -1;
@@ -50,4 +62,6 @@ int main(void) {
     fclose(logStartTime);
     fclose(logElapsedTime);
     return 0;
+}
+*/
 }

@@ -27,6 +27,20 @@ FILE *logStartTime;
 FILE *logElapsedTime;
 FILE *logGaitSpeed;
 FILE *logStep;
+int listLength;
+
+void retrieveUserGaitData(const UserGaitData *list, int len) {
+    int i;
+    for (i = 0; i < len; i++) {
+        printf("[%03d] %s\t", i, list[i].userId);
+        displayTm(&list[i].startTime);
+        printf("\t");
+        displayTm(&list[i].endTime);
+        printf("\t");
+        printf("%f\t%f\n", list[i].gaitSpeed, list[i].strideLength);
+    }
+    printf("total: %d entries\n", i);
+}
 
 int openLogFiles(void) {
     const char *LOG_START_TIME = "log-start-time.txt";
@@ -34,7 +48,7 @@ int openLogFiles(void) {
     const char *LOG_GAIT_SPEED = "log-gait-speed.txt";
     const char *LOG_STEP = "sensor-step.txt";
 
-    startTimeLog = fopen(LOG_START_TIME, "rt");
+    logStartTime = fopen(LOG_START_TIME, "rt");
     if (!logStartTime) {
         return -1;
     }
@@ -58,29 +72,29 @@ int openLogFiles(void) {
 }
 
 void readLogFiles(UserGaitData *list) {
-    char buffer[BUF_SIZE];
-    Timestamp curTime;
+    char buf[BUF_SIZE];
+    Timestamp curStartTime, curEndTime;
     int curElapsedTime, curStep;
     float curGaitSpeed;
     float curStrideLength;
-    int curIdx;
 
-    curIdx = 0;
+    listLength = 0;
     while (!feof(logStartTime)) {
         fgets(buf, BUF_SIZE, logStartTime);
         fscanf(logElapsedTime, "delta time: %d\n", &curElapsedTime);
-        fscanf(logGaitSpeed, "%d\n", &curGaitSpeed);
+        fscanf(logGaitSpeed, "-> v: %f\n", &curGaitSpeed); // -> v: 1.18548
         fscanf(logStep, "%d\n", &curStep);
 
-        curTime = getTime(buf);
+        curStartTime = str2ts(buf);
+        curEndTime = getEndTime(&curStartTime, curElapsedTime);
         curStrideLength = (2.0f * curGaitSpeed * (float)curElapsedTime) / (float)curStep;
 
-        strcpy(list[curIdx].userId, USER_ID);
-        list[curIdx].startTime = curTime;
-        list[curIdx].gaitSpeed = curGaitSpeed;
-        list[curIdx].strideLength = curStrideLength;
-        list[curIdx].endTime = getEndTime(&curTime, curElapsedTime);
-        curIdx++;
+        strcpy(list[listLength].userId, USER_ID);
+        list[listLength].startTime = ts2tm(&curStartTime);
+        list[listLength].endTime = ts2tm(&curEndTime);
+        list[listLength].gaitSpeed = curGaitSpeed;
+        list[listLength].strideLength = curStrideLength;
+        listLength++;
     }
 }
 
@@ -111,12 +125,7 @@ int main(int argc, char *argv[])
     }
 
     readLogFiles(userDataList);
-
-    while (!feof(logStartTime)) {
-        fgets(buffer, BUF_SIZE, logStartTime);
-        printf("%s", buffer);
-        getTime(buffer);
-    }
+    retrieveUserGaitData(userDataList, listLength);
 
     closeLogFiles();
     return 0;
